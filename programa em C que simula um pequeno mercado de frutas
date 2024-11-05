@@ -4,7 +4,6 @@
 
 #define MAX_NOME 50
 
-// Estrutura para armazenar os dados da fruta
 typedef struct Fruta {
     int codigo;
     char nome[MAX_NOME];
@@ -16,7 +15,6 @@ typedef struct Fruta {
 Fruta *lista_frutas = NULL;
 int quantidade_frutas = 0;
 
-// Função para cadastrar uma nova fruta
 void cadastrar_fruta() {
     Fruta *nova_fruta = (Fruta*)malloc(sizeof(Fruta));
 
@@ -25,11 +23,9 @@ void cadastrar_fruta() {
         return;
     }
 
-    // Entrada dos dados
     printf("Digite o código da fruta: ");
     scanf("%d", &nova_fruta->codigo);
 
-    // Verificar se o código já existe
     for (int i = 0; i < quantidade_frutas; i++) {
         if (lista_frutas[i].codigo == nova_fruta->codigo) {
             printf("Erro: código da fruta já cadastrado.\n");
