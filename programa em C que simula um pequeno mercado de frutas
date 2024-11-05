@@ -1,0 +1,234 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_NOME 50
+
+// Estrutura para armazenar os dados da fruta
+typedef struct Fruta {
+    int codigo;
+    char nome[MAX_NOME];
+    int quantidade;
+    float preco;
+} Fruta;
+
+// Lista de frutas (ponteiros para estruturas Fruta)
+Fruta *lista_frutas = NULL;
+int quantidade_frutas = 0;
+
+// Função para cadastrar uma nova fruta
+void cadastrar_fruta() {
+    Fruta *nova_fruta = (Fruta*)malloc(sizeof(Fruta));
+
+    if (!nova_fruta) {
+        printf("Erro ao alocar memória para a fruta.\n");
+        return;
+    }
+
+    // Entrada dos dados
+    printf("Digite o código da fruta: ");
+    scanf("%d", &nova_fruta->codigo);
+
+    // Verificar se o código já existe
+    for (int i = 0; i < quantidade_frutas; i++) {
+        if (lista_frutas[i].codigo == nova_fruta->codigo) {
+            printf("Erro: código da fruta já cadastrado.\n");
+            free(nova_fruta);
+            return;
+        }
+    }
+
+    printf("Digite o nome da fruta: ");
+    getchar();  // Para limpar o buffer do teclado
+    fgets(nova_fruta->nome, MAX_NOME, stdin);
+    nova_fruta->nome[strcspn(nova_fruta->nome, "\n")] = 0;  // Remove o '\n' gerado pelo fgets
+
+    printf("Digite a quantidade em estoque: ");
+    scanf("%d", &nova_fruta->quantidade);
+
+    printf("Digite o preço da fruta: ");
+    scanf("%f", &nova_fruta->preco);
+
+    // Realloc para adicionar a nova fruta na lista
+    quantidade_frutas++;
+    lista_frutas = (Fruta*)realloc(lista_frutas, quantidade_frutas * sizeof(Fruta));
+    lista_frutas[quantidade_frutas - 1] = *nova_fruta;
+
+    printf("Fruta cadastrada com sucesso!\n");
+    free(nova_fruta);
+}
+
+// Função para listar todas as frutas cadastradas
+void listar_frutas() {
+    if (quantidade_frutas == 0) {
+        printf("Nenhuma fruta cadastrada.\n");
+        return;
+    }
+
+    printf("\nLista de frutas cadastradas:\n");
+    for (int i = 0; i < quantidade_frutas; i++) {
+        printf("Código: %d, Nome: %s, Quantidade: %d, Preço: %.2f\n",
+               lista_frutas[i].codigo, lista_frutas[i].nome,
+               lista_frutas[i].quantidade, lista_frutas[i].preco);
+    }
+}
+
+// Função para buscar uma fruta pelo código
+void buscar_fruta() {
+    int codigo;
+    printf("Digite o código da fruta a ser buscada: ");
+    scanf("%d", &codigo);
+
+    for (int i = 0; i < quantidade_frutas; i++) {
+        if (lista_frutas[i].codigo == codigo) {
+            printf("\nFruta encontrada: \n");
+            printf("Código: %d, Nome: %s, Quantidade: %d, Preço: %.2f\n",
+                   lista_frutas[i].codigo, lista_frutas[i].nome,
+                   lista_frutas[i].quantidade, lista_frutas[i].preco);
+            return;
+        }
+    }
+
+    printf("Fruta com código %d não encontrada.\n", codigo);
+}
+
+// Função para alterar os dados de uma fruta
+void alterar_fruta() {
+    int codigo;
+    printf("Digite o código da fruta a ser alterada: ");
+    scanf("%d", &codigo);
+
+    for (int i = 0; i < quantidade_frutas; i++) {
+        if (lista_frutas[i].codigo == codigo) {
+            printf("Alterando dados da fruta: %s\n", lista_frutas[i].nome);
+            printf("Digite o novo nome da fruta: ");
+            getchar();  // Para limpar o buffer
+            fgets(lista_frutas[i].nome, MAX_NOME, stdin);
+            lista_frutas[i].nome[strcspn(lista_frutas[i].nome, "\n")] = 0;
+
+            printf("Digite a nova quantidade em estoque: ");
+            scanf("%d", &lista_frutas[i].quantidade);
+
+            printf("Digite o novo preço da fruta: ");
+            scanf("%f", &lista_frutas[i].preco);
+
+            printf("Dados da fruta alterados com sucesso!\n");
+            return;
+        }
+    }
+
+    printf("Fruta com código %d não encontrada.\n", codigo);
+}
+
+// Função para excluir uma fruta
+void excluir_fruta() {
+    int codigo;
+    printf("Digite o código da fruta a ser excluída: ");
+    scanf("%d", &codigo);
+
+    for (int i = 0; i < quantidade_frutas; i++) {
+        if (lista_frutas[i].codigo == codigo) {
+            if (lista_frutas[i].quantidade > 0) {
+                printf("Erro: Não é possível excluir a fruta, pois ainda há estoque.\n");
+                return;
+            }
+
+            // Remover a fruta
+            for (int j = i; j < quantidade_frutas - 1; j++) {
+                lista_frutas[j] = lista_frutas[j + 1];
+            }
+
+            quantidade_frutas--;
+            lista_frutas = (Fruta*)realloc(lista_frutas, quantidade_frutas * sizeof(Fruta));
+            printf("Fruta excluída com sucesso!\n");
+            return;
+        }
+    }
+
+    printf("Fruta com código %d não encontrada.\n", codigo);
+}
+
+// Função para realizar a venda de frutas
+void vender_fruta() {
+    int codigo, quantidade_vendida;
+    printf("Digite o código da fruta a ser vendida: ");
+    scanf("%d", &codigo);
+
+    for (int i = 0; i < quantidade_frutas; i++) {
+        if (lista_frutas[i].codigo == codigo) {
+            printf("Digite a quantidade a ser vendida: ");
+            scanf("%d", &quantidade_vendida);
+
+            if (quantidade_vendida > lista_frutas[i].quantidade) {
+                printf("Erro: Quantidade em estoque insuficiente.\n");
+                return;
+            }
+
+            lista_frutas[i].quantidade -= quantidade_vendida;
+
+            // Registrar a venda no arquivo
+            FILE *arquivo_vendas = fopen("vendas.txt", "a");
+            if (!arquivo_vendas) {
+                printf("Erro ao abrir o arquivo de vendas.\n");
+                return;
+            }
+
+            fprintf(arquivo_vendas, "Código: %d, Nome: %s, Quantidade: %d, Preço unitário: %.2f, Total: %.2f\n",
+                    lista_frutas[i].codigo, lista_frutas[i].nome, quantidade_vendida,
+                    lista_frutas[i].preco, lista_frutas[i].preco * quantidade_vendida);
+            fclose(arquivo_vendas);
+
+            printf("Venda realizada com sucesso!\n");
+            return;
+        }
+    }
+
+    printf("Fruta com código %d não encontrada.\n", codigo);
+}
+
+// Função principal
+int main() {
+    int opcao;
+
+    do {
+        printf("\nMenu de opções:\n");
+        printf("1. Cadastrar fruta\n");
+        printf("2. Listar frutas\n");
+        printf("3. Buscar fruta\n");
+        printf("4. Alterar fruta\n");
+        printf("5. Excluir fruta\n");
+        printf("6. Vender fruta\n");
+        printf("7. Sair\n");
+        printf("Escolha uma opção: ");
+        scanf("%d", &opcao);
+
+        switch(opcao) {
+            case 1:
+                cadastrar_fruta();
+                break;
+            case 2:
+                listar_frutas();
+                break;
+            case 3:
+                buscar_fruta();
+                break;
+            case 4:
+                alterar_fruta();
+                break;
+            case 5:
+                excluir_fruta();
+                break;
+            case 6:
+                vender_fruta();
+                break;
+            case 7:
+                printf("Saindo do programa...\n");
+                break;
+            default:
+                printf("Opção inválida. Tente novamente.\n");
+        }
+    } while (opcao != 7);
+
+    free(lista_frutas);
+    return 0;
+}
